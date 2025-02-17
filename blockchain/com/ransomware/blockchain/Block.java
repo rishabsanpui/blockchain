@@ -5,10 +5,11 @@ import java.util.Date;
 
 public class Block {
     private String hash;
-    private String data;
     private String previousHash;
+    private String data;
     private long timeStamp;
-    
+    private int nonce; // Added for Proof of Work
+
     public Block(String data, String previousHash) {
         this.data = data;
         this.previousHash = previousHash;
@@ -16,21 +17,10 @@ public class Block {
         this.hash = calculateHash();
     }
 
-    public String getHash() {
-        return hash;
-    }
-
-    public String getData() {
-        return data;
-    }
-
-    public String getPreviousHash() {
-        return previousHash;
-    }
-
+    // Compute hash with nonce
     public String calculateHash() {
         try {
-            String input = previousHash+Long.toString(timeStamp)+data;
+            String input = previousHash + timeStamp + nonce + data;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = digest.digest(input.getBytes("UTF-8"));
 
@@ -43,4 +33,18 @@ public class Block {
             throw new RuntimeException(e);
         }
     }
+
+    //Proof of Work (Mining)
+    public void mineBlock(int difficulty) {
+        String target = new String(new char[difficulty]).replace('\0', '0'); // Create target string (e.g., "0000")
+        while (!hash.substring(0, difficulty).equals(target)) {
+            nonce++; // Change nonce until hash meets difficulty
+            hash = calculateHash();
+        }
+        System.out.println("Block Mined! -> " + hash);
+    }
+
+    public String getHash() { return hash; }
+    public String getPreviousHash() { return previousHash; }
+    public String getData() { return data; }
 }
