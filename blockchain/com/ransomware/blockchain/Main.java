@@ -1,18 +1,27 @@
 package com.ransomware.blockchain;
 
 public class Main {
-    public static void main(String[] args) {
-        int difficulty = 4; // Adjust mining difficulty
-        Blockchain blockchain = new Blockchain(difficulty);
+    public static void main(String[] args) throws Exception {
+        // Create Blockchain
+        Blockchain blockchain = new Blockchain();
 
-        System.out.println("Mining block 1...");
-        blockchain.addBlock("File 1: Secure document.pdf");
+        // Create Validators
+        Validator validator1 = new Validator("Validator1");
+        Validator validator2 = new Validator("Validator2");
 
-        System.out.println("Mining block 2...");
-        blockchain.addBlock("File 2: Confidential report.docx");
+        // Register Validators
+        blockchain.addValidator(validator1);
+        blockchain.addValidator(validator2);
 
-        System.out.println("\nBlockchain Valid: " + blockchain.isChainValid());
-        System.out.println("\nPrinting Blockchain:");
-        // blockchain.printBlockchain();
+        // Add Blocks
+        blockchain.addBlock("FileHash1", validator1);
+        blockchain.addBlock("FileHash2", validator2);
+
+        // Unauthorized Validator trying to add a block
+        Validator fakeValidator = new Validator("FakeValidator");
+        blockchain.addBlock("FakeFileHash", fakeValidator);
+
+        // Print Blockchain
+        blockchain.printBlockchain();
     }
 }
