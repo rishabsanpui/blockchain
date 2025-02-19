@@ -1,53 +1,60 @@
 package com.ransomware.blockchain;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 
 public class Blockchain {
     private List<Block> chain;
-    private int difficulty; // Mining difficulty
+    private HashMap<String, PublicKey> validators;
 
-    public Blockchain(int difficulty) {
-        this.difficulty = difficulty;
+    public Blockchain() {
         chain = new ArrayList<>();
-        // Genesis block (first block)
-        Block genesisBlock = new Block("Genesis Block", "0");
-        genesisBlock.mineBlock(difficulty); // Mine first block
-        chain.add(genesisBlock);
-    }
+        validators = new HashMap<>();
 
-    public void addBlock(String data) {
-        Block previousBlock = chain.get(chain.size() - 1);
-        Block newBlock = new Block(data, previousBlock.getHash());
-        newBlock.mineBlock(difficulty); // Mining required before adding
-        chain.add(newBlock);
-    }
-
-    public boolean isChainValid() {
-        for (int i = 1; i < chain.size(); i++) {
-            Block currentBlock = chain.get(i);
-            Block previousBlock = chain.get(i - 1);
-
-            if (!currentBlock.getHash().equals(currentBlock.calculateHash())) {
-                System.out.println("Block " + i + " has been tampered!");
-                return false;
-            }
-
-            if (!currentBlock.getPreviousHash().equals(previousBlock.getHash())) {
-                System.out.println("Block " + i + " previous hash mismatch!");
-                return false;
-            }
+        try {
+            // Create Genesis block (first block)
+            chain.add(new Block("Genesis File Hash", "0", new Validator("Genesis Validator")));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create Genesis block", e);
         }
-        return true;
     }
 
-    // public void printBlockchain() {
-    //     for (Block block : chain) {
-    //         System.out.println("Block:");
-    //         System.out.println("Data: " + block.getData());
-    //         System.out.println("Hash: " + block.getHash());
-    //         System.out.println("Previous Hash: " + block.getPreviousHash());
-    //         System.out.println("----------------------");
-    //     }
-    // }
+    // Register a new validator (authority)
+    public void addValidator(Validator validator) {
+        validators.put(validator.getId(), validator.getPublicKey());
+    }
+
+    // Add a new block (only if validator is authorized)
+    public boolean addBlock(String fileHash, Validator validator) throws Exception {
+        if (!validators.containsKey(validator.getId())) {
+            System.out.println("Unauthorized Validator: " + validator.getId());
+            return false;
+        }
+
+        Block previousBlock = chain.get(chain.size() - 1);
+        Block newBlock = new Block(fileHash, previousBlock.getFileHash(), validator);
+
+        // Verify signature before adding
+        PublicKey validatorPublicKey = validators.get(validator.getId());
+        if (newBlock.isValidBlock(validatorPublicKey)) {
+            chain.add(newBlock);
+            System.out.println("Block added by Validator: " + validator.getId());
+            return true;
+        } else {
+            System.out.println("Invalid Signature! Block Rejected.");
+            return false;
+        }
+    }
+
+    public void printBlockchain() {
+        for (Block block : chain) {
+            System.out.println("\nBlock:");
+            System.out.println("File Hash: " + block.getFileHash());
+            System.out.println("Previous Hash: " + block.getPreviousHash());
+            System.out.println("Validator ID: " + block.getValidatorId());
+            System.out.println("Signature: " + block.getSignature());
+        }
+    }
 }
